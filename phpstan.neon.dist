@@ -1,0 +1,27 @@
+# phpstan.neon.dist
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: 9
+
+    paths:
+        - app
+
+    tmpDir: var/phpstan
+
+    treatPhpDocTypesAsCertain: false
+    reportMaybesInMethodSignatures: true
+    reportMaybesInPropertyPhpDocTypes: true
+    checkExplicitMixed: true
+    checkImplicitMixed: true
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+
+    inferPrivatePropertyTypeFromConstructor: true
+
+    polluteScopeWithLoopInitialAssignments: false
+    polluteScopeWithAlwaysIterableForeach: false
+
+    rememberPossiblyImpureFunctionValues: false
