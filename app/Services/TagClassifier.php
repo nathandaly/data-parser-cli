@@ -12,12 +12,12 @@ use App\Services\TagStrategies\FreeProductTagStrategy;
 use App\Services\TagStrategies\InAppPurchaseProductTagStrategy;
 use App\Services\TagStrategies\SubscriptionTagStrategy;
 
-class TagClassifier implements TagClassifierInterface
+readonly class TagClassifier implements TagClassifierInterface
 {
     /**
      * @var array<int, TagGroupStrategyInterface>
      */
-    private readonly array $strategies;
+    private array $strategies;
 
     /**
      * @param array<int, TagGroupStrategyInterface> $strategies
@@ -55,7 +55,7 @@ class TagClassifier implements TagClassifierInterface
             $matched = false;
 
             foreach ($this->strategies as $index => $strategy) {
-                if (! $strategy->matches($tag)) {
+                if (!$strategy->matches($tag)) {
                     continue;
                 }
 
@@ -67,18 +67,17 @@ class TagClassifier implements TagClassifierInterface
 
                 $matchedStrategies[$index] = true;
 
-                if ($strategy instanceof SubscriptionTagStrategy) {
-                    $subscriptionStatus = SubscriptionStatus::tryFromTag($tag) ?? SubscriptionStatus::Unknown;
-                } elseif ($strategy instanceof FreeProductTagStrategy) {
-                    $freeProductDownloadStatus = FreeProductDownloadStatus::tryFromTag($tag) ?? FreeProductDownloadStatus::Unknown;
-                } elseif ($strategy instanceof InAppPurchaseProductTagStrategy) {
-                    $inAppPurchaseProductDownloadStatus = InAppPurchaseProductDownloadStatus::tryFromTag($tag) ?? InAppPurchaseProductDownloadStatus::Unknown;
-                }
+                match (true) {
+                    $strategy instanceof SubscriptionTagStrategy => $subscriptionStatus = SubscriptionStatus::tryFromTag($tag) ?? SubscriptionStatus::Unknown,
+                    $strategy instanceof FreeProductTagStrategy => $freeProductDownloadStatus = FreeProductDownloadStatus::tryFromTag($tag) ?? FreeProductDownloadStatus::Unknown,
+                    $strategy instanceof InAppPurchaseProductTagStrategy => $inAppPurchaseProductDownloadStatus = InAppPurchaseProductDownloadStatus::tryFromTag($tag) ?? InAppPurchaseProductDownloadStatus::Unknown,
+                    default => null,
+                };
 
                 break;
             }
 
-            if (! $matched) {
+            if (!$matched) {
                 $unrecognizedTags[] = $tag;
             }
         }
