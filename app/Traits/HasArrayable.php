@@ -16,7 +16,7 @@ trait HasArrayable
     public static function fromArray(array $attributes): static
     {
         $params = [];
-        $constructor = new ReflectionClass(static::class)->getConstructor();
+        $constructor = (new ReflectionClass(static::class))->getConstructor();
 
         foreach ($constructor?->getParameters() ?? [] as $param) {
             $paramName = $param->getName();
