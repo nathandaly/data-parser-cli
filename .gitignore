@@ -4,3 +4,7 @@
 /.vagrant
 .phpunit.result.cache
 /var
+
+tests/Fixtures/20131004/.DS_Store
+
+tests/Fixtures/20131007/.DS_Store
