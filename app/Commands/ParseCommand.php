@@ -112,6 +112,12 @@ class ParseCommand extends Command
 
             $temporaryDirectory = self::TEMPORARY_DIRECTORY;
             $sourcePath = self::TEMPORARY_DIRECTORY;
+
+            $extractedIniPath = $temporaryDirectory . DIRECTORY_SEPARATOR . $iniPath;
+
+            if (is_file($extractedIniPath)) {
+                $iniPath = $extractedIniPath;
+            }
         }
 
         $appCodeResolver = new IniAppCodeResolver($iniPath);
