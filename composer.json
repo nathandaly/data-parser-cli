@@ -16,8 +16,9 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "laravel-zero/framework": "^12.0.2",
+        "laravel/prompts": "^0.3.17",
         "psr/log": "^3.0"
     },
     "require-dev": {
