@@ -10,7 +10,10 @@ use App\Contracts\FileReaderInterface;
 use App\Contracts\TagClassifierInterface;
 use App\Services\IniAppCodeResolver;
 use App\Services\RecordTransformer;
-use InvalidArgumentException;
+
+use function Laravel\Prompts\error;
+use function Laravel\Prompts\text;
+
 use LaravelZero\Framework\Commands\Command;
 use Psr\Log\LoggerInterface;
 use SplFileInfo;
@@ -18,8 +21,8 @@ use SplFileInfo;
 class ParseCommand extends Command
 {
     protected $signature = 'parse
-        {source : Root directory containing date subdirectories with .log files}
-        {output : Output CSV file path}
+        {source? : Root directory containing date subdirectories with .log files}
+        {output? : Output CSV file path}
         {--ini= : Path to the appCodes.ini file (defaults to PARSER_INI_PATH env / parser.default_ini_path config)}';
 
     protected $description = 'Parse device token log files and output a classified CSV';
@@ -36,13 +39,63 @@ class ParseCommand extends Command
 
     public function handle(): int
     {
-        $sourcePath = $this->argument('source');
-        $outputPath = $this->argument('output');
-        $iniOption = $this->option('ini');
-        $iniPath = is_string($iniOption) && $iniOption !== '' ? $iniOption : config('parser.default_ini_path');
+        $defaultSourcePath = config('parser.default_source_path');
+        $defaultOutputPath = config('parser.default_output_path');
 
-        if (!is_string($sourcePath) || !is_string($outputPath) || !is_string($iniPath)) {
-            throw new InvalidArgumentException('source, output, and --ini must be string values.');
+        $sourcePath = $this->argument('source') ?? text(
+            label: 'Source directory',
+            default: is_string($defaultSourcePath) ? $defaultSourcePath : '',
+            required: true,
+            validate: fn(string $value) => !is_dir($value)
+                ? "The directory \"{$value}\" does not exist."
+                : null,
+            hint: 'Root directory containing date subdirectories with .log files',
+        );
+
+        $outputPath = $this->argument('output') ?? text(
+            label: 'Output CSV file',
+            default: is_string($defaultOutputPath) ? $defaultOutputPath : '',
+            required: true,
+            validate: function (string $value) {
+                $dir = dirname($value);
+
+                if ($dir !== '.' && !is_dir($dir)) {
+                    return "The directory \"{$dir}\" does not exist.";
+                }
+            },
+            hint: 'Path to write the output CSV file',
+        );
+
+        $iniOption = $this->option('ini');
+        $iniConfig = config('parser.default_ini_path');
+        $iniPath = is_string($iniOption) && $iniOption !== ''
+            ? $iniOption
+            : (is_string($iniConfig) ? $iniConfig : '');
+
+        if (!is_string($sourcePath) || !is_string($outputPath)) {
+            error('source and output must be string values.');
+
+            return self::FAILURE;
+        }
+
+        if (!is_dir($sourcePath)) {
+            error("The source directory \"{$sourcePath}\" does not exist.");
+
+            return self::FAILURE;
+        }
+
+        $outputDir = dirname($outputPath);
+
+        if ($outputDir !== '.' && !is_dir($outputDir)) {
+            error("The output directory \"{$outputDir}\" does not exist.");
+
+            return self::FAILURE;
+        }
+
+        if ($iniPath === '') {
+            error('No INI file path could be resolved. Set PARSER_INI_PATH or pass --ini.');
+
+            return self::FAILURE;
         }
 
         $appCodeResolver = new IniAppCodeResolver($iniPath);

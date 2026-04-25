@@ -6,6 +6,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default Source Directory
+    |--------------------------------------------------------------------------
+    |
+    | The default root directory to scan for .log files when no source
+    | argument is provided. Can be set via PARSER_SOURCE_PATH in the .env file.
+    |
+    */
+
+    'default_source_path' => env('PARSER_SOURCE_PATH', 'parser_test'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Output File Path
+    |--------------------------------------------------------------------------
+    |
+    | The default path for the output CSV file when no output argument
+    | is provided. Can be set via PARSER_OUTPUT_PATH in the .env file.
+    |
+    */
+
+    'default_output_path' => env('PARSER_OUTPUT_PATH', 'output.csv'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default INI File Path
     |--------------------------------------------------------------------------
     |
