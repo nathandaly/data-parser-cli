@@ -10,6 +10,7 @@ use App\Contracts\FileReaderInterface;
 use App\Contracts\TagClassifierInterface;
 use App\Services\IniAppCodeResolver;
 use App\Services\RecordTransformer;
+use App\Traits\InteractsWithFiles;
 
 use function Laravel\Prompts\error;
 use function Laravel\Prompts\text;
@@ -20,8 +21,12 @@ use SplFileInfo;
 
 class ParseCommand extends Command
 {
+    use InteractsWithFiles;
+
+    private const string TEMPORARY_DIRECTORY = './tmp';
+
     protected $signature = 'parse
-        {source? : Root directory containing date subdirectories with .log files}
+        {source? : Root directory or .zip file containing date subdirectories with .log files}
         {output? : Output CSV file path}
         {--ini= : Path to the appCodes.ini file (defaults to PARSER_INI_PATH env / parser.default_ini_path config)}';
 
@@ -43,13 +48,13 @@ class ParseCommand extends Command
         $defaultOutputPath = config('parser.default_output_path');
 
         $sourcePath = $this->argument('source') ?? text(
-            label: 'Source directory',
+            label: 'Source directory or .zip file',
             default: is_string($defaultSourcePath) ? $defaultSourcePath : '',
             required: true,
-            validate: fn(string $value) => !is_dir($value)
-                ? "The directory \"{$value}\" does not exist."
+            validate: fn(string $value) => !$this->isValidSource($value)
+                ? "The path \"{$value}\" must be an existing directory or a .zip file."
                 : null,
-            hint: 'Root directory containing date subdirectories with .log files',
+            hint: 'Root directory or .zip file containing date subdirectories with .log files',
         );
 
         $outputPath = $this->argument('output') ?? text(
@@ -78,8 +83,8 @@ class ParseCommand extends Command
             return self::FAILURE;
         }
 
-        if (!is_dir($sourcePath)) {
-            error("The source directory \"{$sourcePath}\" does not exist.");
+        if (!$this->isValidSource($sourcePath)) {
+            error("The source \"{$sourcePath}\" must be an existing directory or a .zip file.");
 
             return self::FAILURE;
         }
@@ -96,6 +101,17 @@ class ParseCommand extends Command
             error('No INI file path could be resolved. Set PARSER_INI_PATH or pass --ini.');
 
             return self::FAILURE;
+        }
+
+        $temporaryDirectory = null;
+
+        if (str_ends_with($sourcePath, '.zip')) {
+            if (!$this->extractZip($sourcePath, self::TEMPORARY_DIRECTORY)) {
+                return self::FAILURE;
+            }
+
+            $temporaryDirectory = self::TEMPORARY_DIRECTORY;
+            $sourcePath = self::TEMPORARY_DIRECTORY;
         }
 
         $appCodeResolver = new IniAppCodeResolver($iniPath);
@@ -115,6 +131,10 @@ class ParseCommand extends Command
         }
 
         $this->csvWriter->close();
+
+        if ($temporaryDirectory !== null) {
+            $this->deleteDirectory($temporaryDirectory);
+        }
 
         $processedCount = $id - 1;
 
