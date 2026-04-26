@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default_source_path' => env('PARSER_SOURCE_PATH', 'parser_test'),
+    'default_source_path' => env('PARSER_SOURCE_PATH', 'parser_test.zip'),
 
     /*
     |--------------------------------------------------------------------------

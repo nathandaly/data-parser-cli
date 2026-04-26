@@ -118,5 +118,5 @@ it('exits with success and prints a summary', function () {
         '--ini' => $this->iniPath,
     ])
         ->assertSuccessful()
-        ->expectsOutputToContain('4 records written');
+        ->expectsOutputToContain('4 records written to');
 });

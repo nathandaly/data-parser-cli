@@ -13,6 +13,7 @@ use App\Services\RecordTransformer;
 use App\Traits\InteractsWithFiles;
 
 use function Laravel\Prompts\error;
+use function Laravel\Prompts\progress;
 use function Laravel\Prompts\text;
 
 use LaravelZero\Framework\Commands\Command;
@@ -48,7 +49,7 @@ class ParseCommand extends Command
         $defaultOutputPath = config('parser.default_output_path');
 
         $sourcePath = $this->argument('source') ?? text(
-            label: 'Source directory or .zip file',
+            label: '🤐 Source directory or .zip file',
             default: is_string($defaultSourcePath) ? $defaultSourcePath : '',
             required: true,
             validate: fn(string $value) => !$this->isValidSource($value)
@@ -58,7 +59,7 @@ class ParseCommand extends Command
         );
 
         $outputPath = $this->argument('output') ?? text(
-            label: 'Output CSV file',
+            label: '📁 Output CSV file',
             default: is_string($defaultOutputPath) ? $defaultOutputPath : '',
             required: true,
             validate: function (string $value) {
@@ -128,13 +129,27 @@ class ParseCommand extends Command
 
         $id = 1;
 
-        /** @var SplFileInfo $file */
-        foreach ($this->directoryScanner->scan($sourcePath) as $file) {
+        /** @var array<int, SplFileInfo> $files */
+        $files = iterator_to_array($this->directoryScanner->scan($sourcePath), false);
+
+        $progress = progress(
+            label: '🌀 Processing log files',
+            steps: count($files),
+            hint: 'Classifying device tokens and writing CSV...',
+        );
+
+        $progress->start();
+
+        foreach ($files as $file) {
             foreach ($this->fileReader->read($file) as $rawRecord) {
                 $outputRecord = $transformer->transform($rawRecord, $id++);
                 $this->csvWriter->writeRecord($outputRecord);
             }
+
+            $progress->advance();
         }
+
+        $progress->finish();
 
         $this->csvWriter->close();
 
@@ -144,7 +159,7 @@ class ParseCommand extends Command
 
         $processedCount = $id - 1;
 
-        $this->info("Done. {$processedCount} records written to {$outputPath}.");
+        $this->info("✨ Done. {$processedCount} records written to {$outputPath}. ✨");
 
         return self::SUCCESS;
     }
