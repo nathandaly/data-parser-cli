@@ -1,5 +1,7 @@
 # Parser CLI
 
+[![PHP Package Checks](https://github.com/nathandaly/data-parser-cli/actions/workflows/php.yml/badge.svg)](https://github.com/nathandaly/data-parser-cli/actions/workflows/php.yml)
+
 A Laravel Zero CLI tool for processing device token log files exported from a third-party push notification service. It reads ~73,000 records across 74 `.log` files, classifies pipe-delimited tags into three output groups, resolves app display names to kebab-case codes via an INI reverse map, and writes a clean CSV ready for import.
 
 The tool accepts a source directory or a `.zip` archive, interacts with the user through [Laravel Prompts](https://laravel.com/docs/13.x/prompts) when arguments are omitted, and streams records through PHP generators to keep memory use flat regardless of input size.
