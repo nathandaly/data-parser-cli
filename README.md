@@ -269,6 +269,24 @@ AI was used for:
 
 The strategy pattern, enum design, generator-based I/O, readonly DTO approach, and exception naming were all my own choices. I used AI to implement them faster and to catch static analysis issues early, not to decide what to build.
 
+## AI Classification I considered
+
+Given that the role centres on AI prototyping, I thought about applying AI-based classification to the unknown tag problem rather than relying purely on rule-based strategies.
+
+The idea was to treat unrecognised tags as free-text input and send them through a text-classification API or a locally hosted model such as BERT or GPT. Instead of maintaining an explicit mapping for every possible tag string, you supply the model with a prompt along the lines of:
+
+> "This tag comes from a device token log file. Decide whether it relates to subscription status, free product download status, in-app purchase download status, or none of the above."
+
+A handful of labelled examples alongside the prompt is enough for zero-shot or few-shot classification — the model infers the category without a large training set. The model's response would then populate the three output status fields, with ambiguous results flagged for human review rather than silently defaulted to `unknown`.
+
+This approach has real advantages over rigid rule matching:
+
+- It adapts to new tag strings from the third-party service without requiring a code or config change.
+- It handles typos, abbreviations, and novel compound tags that a strategy-based classifier would miss.
+- Classification confidence scores give a natural hook for a human-review queue.
+
+I decided against implementing it for this test for a few reasons. The dataset is 73,000 records but the tag vocabulary is small and well-defined — the rule-based Strategy Pattern is predictable, testable, and deterministic for this scale. Introducing an API call or local model inference per unrecognised tag would add latency, cost, external dependencies, and non-determinism that are not justified when the existing tag set is stable enough to be fully covered by enums. The `unrecognizedTags` field on `ClassifiedTags` and the PSR-3 warning on `RecordTransformer` were deliberately designed as the extension point where an AI classifier could slot in later if the tag vocabulary grows or becomes less predictable.
+
 ## Addendum
 
 With more time, there are a few areas I would extend:
